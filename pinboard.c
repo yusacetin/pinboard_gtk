@@ -10,11 +10,13 @@ void copy_callback(GtkWidget *widget, gpointer data)
     gtk_main_quit();
 }
 
-void keyboard_quit(GtkWidget *widget, GdkEventKey *event, gpointer data)
+gboolean keyboard_quit(GtkWidget *widget, GdkEventKey *event, gpointer data)
 {
     if (event->keyval == GDK_KEY_Escape) {
         gtk_main_quit();
+        return TRUE;
     }
+    return FALSE;
 }
 
 // GTK program template from https://zetcode.com/gui/gtk2/gtklayoutmanagement/
@@ -53,6 +55,10 @@ int main(int argc, char *argv[])
             button = gtk_button_new_with_label(values[pos]);
             gtk_table_attach_defaults(GTK_TABLE(table), button, j, j+1, i, i+1);
             g_signal_connect(G_OBJECT(button), "clicked", G_CALLBACK(copy_callback), NULL);
+            if (i == 0 && j == 0)
+            {
+                gtk_widget_grab_focus(button);
+            }
             pos++;
         }
     }
