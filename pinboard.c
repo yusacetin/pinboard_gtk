@@ -1,6 +1,5 @@
 #include <gtk/gtk.h>
 
-
 void copy_callback(GtkWidget *widget, gpointer data)
 {
     GtkClipboard* clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
@@ -9,6 +8,13 @@ void copy_callback(GtkWidget *widget, gpointer data)
     g_print(text);
     g_print("\n");
     gtk_main_quit();
+}
+
+void keyboard_quit(GtkWidget *widget, GdkEventKey *event, gpointer data)
+{
+    if (event->keyval == GDK_KEY_Escape) {
+        gtk_main_quit();
+    }
 }
 
 // GTK program template from https://zetcode.com/gui/gtk2/gtklayoutmanagement/
@@ -53,6 +59,7 @@ int main(int argc, char *argv[])
 
     gtk_container_add(GTK_CONTAINER(window), table);
     g_signal_connect(G_OBJECT(window), "destroy", G_CALLBACK(gtk_main_quit), NULL);
+    g_signal_connect(G_OBJECT(window), "key_press_event", G_CALLBACK(keyboard_quit), NULL);
     gtk_widget_show_all(window);
     gtk_main();
 
