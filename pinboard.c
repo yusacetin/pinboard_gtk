@@ -1,6 +1,6 @@
 #include <gtk/gtk.h>
 
-const int NAV_WRAP = 1; // whether navigation wrapping is allowed when using vim keys (1 for allow, anything else for disallow)
+const int NAV_WRAP = 0; // whether navigation wrapping is allowed when using vim keys (1 for allow, anything else for disallow)
 
 GtkWidget* table;
 GtkWidget* window;
