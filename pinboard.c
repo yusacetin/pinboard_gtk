@@ -44,7 +44,6 @@ void free_data(gpointer data, GClosure* closure){
 void copy_callback(GtkWidget *widget, gpointer data){
     char* text = gtk_button_get_label(GTK_BUTTON(widget));
     char command[1024];
-
     snprintf(command, sizeof(command), "echo -n '%s' | xclip -selection clipboard", text);
     system(command);
 
