@@ -1,9 +1,13 @@
 #include <gtk/gtk.h>
 
+const int NAV_WRAP = 1; // whether navigation wrapping is allowed when using vim keys (1 for allow, anything else for disallow)
+
 GtkWidget* table;
 GtkWidget* window;
 GtkWidget* buttons[16];
 
+const int ROW_MINS[] = {0, 4, 8, 12};
+const int ROW_MAXS[] = {3, 7, 11, 15};
 gchar* values[16] = {
     "ಠ◡ಠ", "(・_・;)", "ヽ(°〇°)ﾉ", "( ͠° ͟ʖ ͡°)",
     "︶_︶", "¯\\_(ツ)_/¯", "( ͡° ʖ̯ ͡°)", "( ͡° ͜ʖ ͡°)",
@@ -11,8 +15,7 @@ gchar* values[16] = {
     "(｡•́︿•̀｡)", "(ಥ﹏ಥ)", "(￢_￢)", "(ʘ ͟ʖ ʘ)"
 };
 
-gint get_focused_button_index()
-{
+gint get_focused_button_index(){
     GSList *children, *iter;
     gint index = 0;
 
@@ -21,10 +24,8 @@ gint get_focused_button_index()
 
     // Iterate over the table's children to find the focused widget
     children = gtk_container_get_children(GTK_CONTAINER(table));
-    for (iter = children; iter != NULL; iter = g_slist_next(iter))
-    {
-        if (GTK_IS_WIDGET(iter->data) && GTK_WIDGET(iter->data) == focused_widget)
-        {
+    for (iter = children; iter != NULL; iter = g_slist_next(iter)){
+        if (GTK_IS_WIDGET(iter->data) && GTK_WIDGET(iter->data) == focused_widget){
             index = 15 - index;
             //g_print("Focused widget index: %d\n", index);
             break;
@@ -36,62 +37,98 @@ gint get_focused_button_index()
 }
 
 
-void free_data(gpointer data, GClosure* closure)
-{
+void free_data(gpointer data, GClosure* closure){
     free(data);
 }
 
-void copy_callback(GtkWidget *widget, gpointer data)
-{
-    GtkClipboard* clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
+void copy_callback(GtkWidget *widget, gpointer data){
     char* text = gtk_button_get_label(GTK_BUTTON(widget));
-    gtk_clipboard_set_text(clipboard, text, -1);
+    char command[1024];
+
+    snprintf(command, sizeof(command), "echo -n '%s' | xclip -selection clipboard", text);
+    system(command);
+
     g_print(text);
     g_print("\n");
     gtk_main_quit();
 }
 
-void focus(GtkWidget* button)
-{
+void focus(GtkWidget* button){
     gtk_widget_grab_focus(button);
 }
 
-gboolean key_press_callback(GtkWidget *widget, GdkEventKey *event, gpointer data)
-{
-    if (event->keyval == GDK_KEY_Escape)
-    {
+gboolean key_press_callback(GtkWidget *widget, GdkEventKey *event, gpointer data){
+    if (event->keyval == GDK_KEY_Escape){
         gtk_main_quit();
         return TRUE;
     }
-    if (event->keyval == GDK_KEY_l)
-    {
+    if (event->keyval == GDK_KEY_l || event->keyval == GDK_KEY_Right){
         gint current_index = get_focused_button_index();
         int new_index = current_index + 1;
-        if (new_index > 15){new_index = 0;}
+        if (NAV_WRAP != 1){
+            int current_row;
+            if (current_index < 4){current_row = 0;}
+            else if (current_index < 8){current_row = 1;}
+            else if (current_index < 12){current_row = 2;}
+            else{current_row = 3;}
+            if (new_index < ROW_MINS[current_row]){new_index = current_index;}
+            else if (new_index > ROW_MAXS[current_row]){new_index = current_index;}
+        }
+        if (new_index > 15){
+            if (NAV_WRAP == 1){
+                new_index = 0;
+            }else{
+                new_index = current_index;
+            }
+        }
         focus(buttons[new_index]);
         return TRUE;
     }
-    else if (event->keyval == GDK_KEY_h)
-    {
+    else if (event->keyval == GDK_KEY_h || event->keyval == GDK_KEY_Left){
         gint current_index = get_focused_button_index();
         int new_index = current_index - 1;
-        if (new_index < 0){new_index = 15;}
+        if (NAV_WRAP != 1){
+            int current_row;
+            if (current_index < 4){current_row = 0;}
+            else if (current_index < 8){current_row = 1;}
+            else if (current_index < 12){current_row = 2;}
+            else{current_row = 3;}
+            if (new_index < ROW_MINS[current_row]){new_index = current_index;}
+            else if (new_index > ROW_MAXS[current_row]){new_index = current_index;}
+        }
+        if (new_index < 0){
+            if (NAV_WRAP == 1){
+                new_index = 15;
+            }else{
+                new_index = current_index;
+            }
+        }
         focus(buttons[new_index]);
         return TRUE;
     }
-    else if (event->keyval == GDK_KEY_j)
-    {
+    else if (event->keyval == GDK_KEY_j || event->keyval == GDK_KEY_Down){
         gint current_index = get_focused_button_index();
         int new_index = current_index + 4;
-        if (new_index > 15){new_index = new_index - 16;}
+        if (new_index > 15){
+            if (NAV_WRAP == 1){
+                new_index = new_index - 16;
+            }else{
+                new_index = current_index;
+            }
+        }
         focus(buttons[new_index]);
         return TRUE;
     }
-    else if (event->keyval == GDK_KEY_k)
-    {
+    else if (event->keyval == GDK_KEY_k || event->keyval == GDK_KEY_Up){
         gint current_index = get_focused_button_index();
         int new_index = current_index - 4;
-        if (new_index < 0){new_index = new_index + 16;}
+        if (new_index < 0){
+            if (NAV_WRAP == 1){
+                new_index = new_index + 16;
+            }else{
+                new_index = current_index;
+            }
+        }
         focus(buttons[new_index]);
         return TRUE;
     }
@@ -99,11 +136,8 @@ gboolean key_press_callback(GtkWidget *widget, GdkEventKey *event, gpointer data
 }
 
 // GTK program template from https://zetcode.com/gui/gtk2/gtklayoutmanagement/
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]){
     GtkWidget *button;
-    
-
     gtk_init(&argc, &argv);
 
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
