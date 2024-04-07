@@ -1,4 +1,4 @@
-## Deprecated
+## Deprecation
 
 See https://github.com/yusacetin/pinboard for the new version.
 
